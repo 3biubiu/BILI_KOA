@@ -1,4 +1,4 @@
-const {createUser} = require('../service/use.service')
+const {createUser} = require('../service/user.service')
 
 class UserController {
   async register(ctx,next){
@@ -9,7 +9,10 @@ class UserController {
     const res = await createUser(user_name,password)
     //返回结果
     ctx.body = '用户注册成功'
-    ctx.body = res
+    ctx.body = {
+      code:0, //代表成功
+      message:'用户注册成功',
+    }
   }
 
   async login(ctx,next){
