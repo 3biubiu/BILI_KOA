@@ -1,13 +1,13 @@
-const {getUserInfo} = require('../service/user.service')
-
-const {userFormateError,userAlreadyExisted} = require('../constants/err.type')
+const { getUserInfo } = require('../service/user.service')
+const bcrypt = require('bcryptjs')
+const { userFormateError, userAlreadyExisted, userRegisterError } = require('../constants/err.type')
 const userValidator = async (ctx, next) => {
 
-  const{user_name,password} = ctx.request.body
-  if(!user_name || !password){
+  const { user_name, password } = ctx.request.body
+  if (!user_name || !password) {
     ctx.status = 409
     // console.log(getUserInfo({user_name}));
-    ctx.app.emit('error', userFormateError, ctx)
+    ctx.app.emit('error', userFormateError, ctx) 
 
     // console.error("用户名或密码不能为空",ctx.request.body);
     // ctx.body = {
@@ -15,29 +15,48 @@ const userValidator = async (ctx, next) => {
     //   message:"用户名不能为空",
     //   result: ''
     // }
-    return 
+    return
   }
   await next()
 }
+const crpyPassword = async (ctx, next) => {
+  const { password } = ctx.request.body
+  const salt = bcrypt.genSaltSync(10);
+  //哈希保存密文
+  const hash = bcrypt.hashSync(password, salt)
 
-const verifyUser = async(ctx,next) =>{
-
-  const {user_name} = ctx.request.body
-
-  if(await getUserInfo({user_name}) != null){
-    ctx.status = 409
-    ctx.app.emit('error', userAlreadyExisted, ctx)
-    // ctx.body = {
-    //   code:'10002',
-    //   message:"用户已经存在",
-    //   result: ''
-    // }
-    return 
-  }
+  ctx.request.body.password = hash
 
   await next()
 }
-module.exports ={
+const verifyUser = async (ctx, next) => {
+
+  const { user_name } = ctx.request.body
+  try {
+    const res = await getUserInfo({ user_name })
+    if (res) {
+      console.error('用户名已经存在', { user_name });
+      ctx.status = 409
+      ctx.app.emit('error', userAlreadyExisted, ctx)
+      // ctx.body = {
+      //   code:'10002',
+      //   message:"用户已经存在",
+      //   result: ''
+      // }
+      return
+    }
+  } catch (err) {
+    console.error('获取用户信息错误', err);
+
+    ctx.app.emit('error', userRegisterError, ctx)
+    return
+  }
+
+
+  await next()
+}
+module.exports = {
   userValidator,
-  verifyUser
+  verifyUser,
+  crpyPassword
 }
