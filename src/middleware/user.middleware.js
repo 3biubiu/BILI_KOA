@@ -1,13 +1,21 @@
 const { getUserInfo } = require('../service/user.service')
 const bcrypt = require('bcryptjs')
-const { userFormateError, userAlreadyExisted, userRegisterError } = require('../constants/err.type')
+const {
+  userFormateError,
+  userAlreadyExisted,
+  userRegisterError,
+  userDoesNotExist,
+  userLoginError,
+  invalidPassword
+}
+  = require('../constants/err.type')
 const userValidator = async (ctx, next) => {
 
   const { user_name, password } = ctx.request.body
   if (!user_name || !password) {
     ctx.status = 409
     // console.log(getUserInfo({user_name}));
-    ctx.app.emit('error', userFormateError, ctx) 
+    ctx.app.emit('error', userFormateError, ctx)
 
     // console.error("用户名或密码不能为空",ctx.request.body);
     // ctx.body = {
@@ -51,12 +59,38 @@ const verifyUser = async (ctx, next) => {
     ctx.app.emit('error', userRegisterError, ctx)
     return
   }
+  await next()
+}
+
+const verifyLogin = async (ctx, next) => {
+  //用户是否存在.密码是否匹配
+  const { user_name, password } = ctx.request.body
+
+  const res = await getUserInfo({ user_name })
+
+  try {
+    if (!res) {
+      console.error('用户名不存在', { user_name })
+      ctx.app.emit('error', userDoesNotExist, ctx)
+      return
+    }
+    if (!bcrypt.compareSync(password, res.password)) {
+      ctx.app.emit('error', invalidPassword, ctx)
+      return
+    }
+  } catch (error) {
+    console.error(error)
+    ctx.app.emit('error', userLoginError, ctx)
+    return
+  }
 
 
   await next()
+
 }
 module.exports = {
   userValidator,
   verifyUser,
-  crpyPassword
+  crpyPassword,
+  verifyLogin
 }

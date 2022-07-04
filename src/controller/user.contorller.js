@@ -1,5 +1,5 @@
 const { createUser, getUserInfo, } = require('../service/user.service')
-const {userRegisterError} = require('../constants/err.type')
+const { userRegisterError } = require('../constants/err.type')
 class UserController {
   async register(ctx, next) {
     //获取数据
@@ -32,15 +32,26 @@ class UserController {
           user_name: res.user_name
         }
       }
-    }catch(err){
+    } catch (err) {
       console.log(err);
-      ctx.app.emit('error',userRegisterError,ctx)
+      ctx.app.emit('error', userRegisterError, ctx)
     }
-    
+
   }
 
   async login(ctx, next) {
-    ctx.body = "登陆成功"
+    const { user_name } = ctx.request.body
+
+    // ctx.body = '欢迎回来'
+
+    //1 获取用户信息 playload (id username isadmin)
+    try {
+      const res = await getUserInfo({ username })
+
+      const { password, ...resUser } = res
+    } catch (err) {
+
+    }
   }
 }
 
