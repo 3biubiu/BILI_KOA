@@ -1,5 +1,8 @@
 const { createUser, getUserInfo, } = require('../service/user.service')
 const { userRegisterError } = require('../constants/err.type')
+const jwt = require('jsonwebtoken')
+
+const { JWT_SECRET } = require("../config/config.default")
 class UserController {
   async register(ctx, next) {
     //获取数据
@@ -46,11 +49,19 @@ class UserController {
 
     //1 获取用户信息 playload (id username isadmin)
     try {
-      const res = await getUserInfo({ username })
-
+      const res = await getUserInfo({ user_name })
+      // 剔除掉password
       const { password, ...resUser } = res
-    } catch (err) {
 
+      ctx.body = {
+        code: '0',
+        message: '用户登录成功',
+        result: {
+          token: jwt.sign(res,JWT_SECRET,{expiresIn:'1d'})
+        }
+      }
+    } catch (err) {
+      console.error('用户登录失败',err)
     }
   }
 }
